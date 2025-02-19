@@ -299,7 +299,7 @@ function TP(targetPosition)
         local duration = Distance / Speed
 
         if duration < 1 then
-            duration = 1
+            duration = 2
         end
 
         for _, part in ipairs(Character:GetDescendants()) do
