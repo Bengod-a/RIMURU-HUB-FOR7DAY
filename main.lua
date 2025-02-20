@@ -24,12 +24,16 @@ local AutoReJoIn = Window:AddTab({
     Title = "AutoReJoIn",
     Icon = "rbxassetid://654321"
 })
+
+
 Window:SelectTab(1)
 
 local AutoFarmSection = FarmingTab:AddSection("AUTOFARM")
 local AutoReJoInSection = AutoReJoIn:AddSection("AUTOREJOIN")
 local MainSection = MainTab:AddSection("MAIN SETTINGS")
 local BOOSTFPS = MainTab:AddSection("BOOST FPS")
+
+
 
 local AutoFarmEnabled = false
 local AutoReJoInEnabled = false
@@ -151,6 +155,24 @@ AutoFarmSection:AddToggle("AutoFarmToggle", {
     Callback = function(state)
         AutoFarmEnabled = state
         writefile("AutoFarmConfig.txt", tostring(state))
+
+      if AutoFarmEnabled then
+            local mt = getrawmetatable(game)
+            setreadonly(mt, false)
+            local oldIndex = mt.__namecall
+
+            mt.__namecall = newcclosure(function(...)
+                local args = {...}
+                local method = getnamecallmethod()
+
+                if method == "Kick" then
+                    return nil 
+                end
+                return oldIndex(...)
+            end)
+            setreadonly(mt, true)
+
+    end
     end
 })
 
@@ -236,92 +258,22 @@ end
 
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 
-local smoothness = 0.3
 
 local Character, HRP = waitForCharacter()
 
 local ATTACK_INTERVAL = 0
 local lastAttackTime = tick()
-local currentTarget = nil
 local lastTargetPosition = nil
 
 local fallbackPosition = Vector3.new(226.298584, 12.8325548, -920.831055)
 local forbiddenPosition = Vector3.new(-280.000122, 185.000092, -1599.99976)
 
-function getGroundY()
-    local success, result = pcall(function()
-        local rayOrigin = HRP.Position
-        local rayDirection = Vector3.new(0, -50, 0)
-        local raycastParams = RaycastParams.new()
-        raycastParams.FilterDescendantsInstances = {Character}
-        raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
 
-        local rayResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-        if rayResult then
-            return rayResult.Position.Y + 1
-        else
-            return HRP.Position.Y + (240 - HRP.Position.Y) * smoothness
-        end
-    end)
-
-    if success then
-        return result
-    else
-        warn("Error in getGroundY: " .. result)
-        return HRP.Position.Y
-    end
+function TP(pos)
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
 end
 
-function TP(targetPosition)
-    if not AutoFarmEnabled then
-        return
-    end
-
-    if lastTargetPosition and (targetPosition - lastTargetPosition).Magnitude < 1 then
-        return
-    end
-
-    lastTargetPosition = targetPosition
-
-    local success, errorMessage = pcall(function()
-        local targetY = getGroundY()
-        local finalTarget = Vector3.new(targetPosition.X, targetY, targetPosition.Z)
-
-        if (finalTarget - forbiddenPosition).Magnitude < 5 and
-            (not currentTarget or currentTarget.Name ~= "Corrupting Crystal") then
-            return
-        end
-
-        local Distance = (finalTarget - HRP.Position).Magnitude
-        local Speed = 125
-        local duration = Distance / Speed
-
-        if duration < 1 then
-            duration = 2
-        end
-
-        for _, part in ipairs(Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-
-        local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
-        local tweenGoal = {
-            CFrame = CFrame.new(finalTarget)
-        }
-
-        local tween = TweenService:Create(HRP, tweenInfo, tweenGoal)
-        tween:Play()
-
-    end)
-
-    if not success then
-        warn("Error in TP function: " .. errorMessage)
-    end
-end
 
 function atk()
     if not AutoFarmEnabled then
@@ -367,27 +319,7 @@ function findClosestEnemy()
                         closestEnemy = v
                     end
                 end
-
-                if v.Name == "Timelost Sorcerer" then
-                    local targetPosition = Vector3.new(346.67984, 134.3526 + 10, -1260.32996)
-                    local distance = (HRP.Position - targetPosition).Magnitude
-                    local speed = 125
-                    local duration = distance / speed
-
-                    if duration < 0.5 then
-                        duration = 0.5
-                    end
-
-                    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
-                    local tweenGoal = {
-                        CFrame = CFrame.new(targetPosition)
-                    }
-
-                    local tween = TweenService:Create(HRP, tweenInfo, tweenGoal)
-                    tween:Play()
-
-                    closestEnemy = v
-                end
+  
 
                 if v.Name == "Corrupting Crystal" and v:FindFirstChild("HumanoidRootPart") and
                     not v.Name:find("Defeated") then
@@ -414,7 +346,7 @@ RunService.RenderStepped:Connect(function()
     if not AutoFarmEnabled then
         return
     end
-    local targetY = getGroundY()
+    local targetY = TP()
     HRP.CFrame = HRP.CFrame:Lerp(CFrame.new(HRP.Position.X, targetY, HRP.Position.Z), 0.1)
 end)
 
