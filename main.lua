@@ -286,6 +286,7 @@ function atk()
             ReplicatedStorage:WaitForChild("Spell"):FireServer("Spell1", Vector3.new(0, 67.8, 0), Vector3.zero, 0)
             ReplicatedStorage:WaitForChild("Spell"):FireServer("Spell2", Vector3.new(0, 67.8, 0), Vector3.zero, 0)
             ReplicatedStorage:WaitForChild("Spell"):FireServer("Spell3", Vector3.new(0, 67.8, 0), Vector3.zero, 0)
+            ReplicatedStorage:WaitForChild("Spell"):FireServer("Spell4", Vector3.new(0, 67.8, 0), Vector3.zero, 0)
         end)
 
         if not success then
